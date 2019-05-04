@@ -7,15 +7,14 @@ Like autoencoder, RBM is a dimensionality reduction technique. RBM has one visib
 
 ### Environment
 
-PyCharm 2018.3.4, jre 8, mac osx
+PyCharm 2018.3.4, python 3, mac osx
 
 ### Experiments
 
 <img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_cost.png" width="550">
 
 The left images are the original ones. The right images ars the reconstructed images by using RBM.
-<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_0_reconstruction.png" width="550">
 
-<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_1_reconstruction.png" width="550">
+<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_0_reconstruction.png" width="550">
 
 <img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_4_reconstruction.png" width="550">
