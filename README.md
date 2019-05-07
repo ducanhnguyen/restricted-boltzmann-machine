@@ -4,7 +4,7 @@ The implementation of rbm, which is an improvement of Boltzmann Machine. RBM is 
 RBM has one visible layer (v) and one hidden layer (h). We can calculate h from v. Otherwise, we also can calculate v from h.
 
 
-## 1. Standard RBM
+## 1. Bernoulli RBM
 
 Both sides only have values of 0 or 1 (boolean values).
 
@@ -53,11 +53,9 @@ The formula of the energy function F is as follows:
 <img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/energy_function.png" width="350">
 </p>
 
-#### Environment
-
-PyCharm 2018.3.4, python 3, mac osx
-
 #### Experiments
+
+The experiment is performed on PyCharm 2018.3.4, python 3, mac osx.
 
 <img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_cost.png" width="550">
 
@@ -66,3 +64,19 @@ The left images are the original ones. The right images ars the reconstructed im
 | Example 1 | Example 2 | Example 3 |
 | --- | --- | --- |
 |<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_0_reconstruction.png" width="350">|<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_1_construction.png" width="350">|<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/rbm_4_reconstruction.png" width="350">|
+
+## 2. Stacked RBM
+
+It is similar to stacked autoencoder.
+
+Stacked RBM = continuous layer of RBM
+
+#### Experiment
+
+I test with three RBM on digit-recognizer dataset. The first hidden layer has 64 units. The second has 32 units. The last hidden layer has 16 unit. The number of classes on output layer is 10 classes.
+
+Each hidden layer is trained in turn from the first hidden layer to the last hidden layer. In each training phase, epoch = 100, learning_rate = 0.001.
+
+<img src="https://github.com/ducanhnguyen/restricted-boltzmann-machine/blob/master/img/stacked_rbm.png" width="550">
+
+Kaggle score: 0.95757% on the dataset digit-recognizer.
