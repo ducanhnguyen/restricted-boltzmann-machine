@@ -1,8 +1,11 @@
 """
-Implementation of AutoEncoder with more than hidden layer.
+RBM greedy layer-wise pretraining
 
-Kaggle: ~94.62%
+Dataset: digit-recognizer
+
+Kaggle accuracy: 0.95757%
 """
+import matplotlib.pylab as plt
 import numpy as np
 import tensorflow as tf
 
@@ -38,13 +41,14 @@ class RBM:
         self.M1 = M1
         self.M2 = M2
 
-    def fit(self, X, learning_rate=0.001, epoch=10, batch_size=100):
+    def fit(self, X, learning_rate=0.001, epoch=100, batch_size=100):
         N, D = X.shape
         tf_V = tf.placeholder(dtype=tf.float32, shape=(None, self.M1))
 
         self.tf_W = tf.Variable(dtype=tf.float32,
                                 initial_value=tf.random.normal(dtype=tf.float32, shape=(self.M1, self.M2), mean=0,
-                                                               stddev=1 / self.M1))  # xavier initialization
+                                                               stddev=tf.math.sqrt(
+                                                                   1 / self.M1)))  # xavier initialization
         self.tf_c = tf.Variable(dtype=tf.float32, initial_value=tf.random.normal(dtype=tf.float32, shape=(self.M2, 1)))
         self.tf_b = tf.Variable(dtype=tf.float32, initial_value=tf.random.normal(dtype=tf.float32, shape=(self.M1, 1)))
 
@@ -58,8 +62,7 @@ class RBM:
         with tf.Session() as session:
             session.run(tf.global_variables_initializer())
 
-            iteration = 0
-            iterations = []
+            epoches = []
             costs = []
 
             nBatches = np.int(np.round(N * 1.0 / batch_size - 0.5))
@@ -68,20 +71,15 @@ class RBM:
                 for j in range(nBatches + 1):
 
                     # mini-batch gradient descent
-                    cost = 0
                     if j == nBatches:
-                        _ = session.run(train_op, feed_dict={tf_V: X[j * nBatches:N]})
+                        session.run(train_op, feed_dict={tf_V: X[j * nBatches:N]})
                     else:
-                        _ = session.run(train_op, feed_dict={tf_V: X[j * nBatches:(j + 1) * nBatches]})
+                        session.run(train_op, feed_dict={tf_V: X[j * nBatches:(j + 1) * nBatches]})
 
-                    if (iteration % 100 == 0):
-                        iterations.append(iteration)
-
-                        cost = session.run(tf_cost, feed_dict={tf_V: X})
-                        print("Epoch " + str(i) + "/ Iteration " + str(iteration) + "/ Cost = " + str(cost))
-                        costs.append(cost)
-
-                    iteration += 1
+                epoches.append(i)
+                cost = session.run(tf_cost, feed_dict={tf_V: X})
+                print("Epoch " + str(i) + "/ Cost = " + str(cost))
+                costs.append(cost)
 
             self.Z = session.run(tf_Z, feed_dict={tf_V: X})
 
@@ -154,24 +152,24 @@ class ANN:
                 layers.append(hiddenLayer)
         return layers
 
-    def fit(self, Xtrain, ytrain, learning_rate=0.001, epoch=20, batch_size=100):
+    def fit(self, Xtrain, ytrain, learning_rate=0.001, epoch=100, batch_size=100):
         N = Xtrain.shape[0]
         self.layers = self.initializeLayers(self.D, self.K, self.hiddenLayersSize)
 
-        # STEP 1: greedy layer-wise training of autoencoders
-        input_autoencoder = Xtrain
+        # STEP 1: greedy layer-wise training of RBM
+        input_RBM = Xtrain
 
         for layer in self.layers[:-1]:
             print('Pretraining layer = (' + str(layer.M1) + ', ' + str(layer.M2) + ')')
-            layer.fit(input_autoencoder)
-            input_autoencoder = layer.Z
+            layer.fit(input_RBM)
+            input_RBM = layer.Z
 
         # STEP 2
         print('Fit model')
         self.tf_X = tf.placeholder(dtype=tf.float32)
         tf_Y = tf.placeholder(dtype=tf.float32)
 
-        Ytrain = utils.convert2indicator(ytrain)
+        Ytrain = src.utils.convert2indicator(ytrain)
 
         self.tf_Yhat = self.forward(self.tf_X)
         tf_cost = tf.math.reduce_sum(- tf_Y * tf.math.log(self.tf_Yhat))
@@ -180,14 +178,14 @@ class ANN:
         self.session = tf.Session()
         self.session.run(tf.global_variables_initializer())
 
-        iteration = 0
-        iterations = []
+        epoches = []
         costs = []
 
         nBatches = np.int(np.round(N * 1.0 / batch_size - 0.5))
 
         for i in range(epoch):
             for j in range(nBatches + 1):
+
                 # mini-batch gradient descent
                 if j == nBatches:
                     self.session.run(train_op, feed_dict={
@@ -198,17 +196,14 @@ class ANN:
                         self.tf_X: Xtrain[j * nBatches:(j + 1) * nBatches],
                         tf_Y: Ytrain[j * nBatches:(j + 1) * nBatches]})
 
-                # just for testing
-                if (iteration % 100 == 0):
-                    iterations.append(iteration)
+            epoches.append(i)
 
-                    trainingCost = self.session.run(tf_cost, feed_dict={self.tf_X: Xtrain, tf_Y: Ytrain})
-                    costs.append(trainingCost)
+            trainingCost = self.session.run(tf_cost, feed_dict={self.tf_X: Xtrain, tf_Y: Ytrain})
+            costs.append(trainingCost)
 
-                    print("Training. Epoch " + str(i) + "/ Iteration " + str(iteration)
-                          + "/ Training error = " + str(trainingCost / len(Xtrain)))
+            print("Training. Epoch " + str(i) + "/ Training error = " + str(trainingCost / len(Xtrain)))
 
-                iteration += 1
+        self.plotCost(epoches, costs)
 
     def forward(self, X):
         for layer in self.layers:
@@ -223,6 +218,20 @@ class ANN:
     def score(self, y, yhat):
         return np.mean(y == yhat)
 
+    def plotCost(self, epoches, costs):
+        """
+        Visualization
+        :param scores: 1-D dimension of float numbers
+        :param epoches:  1-D dimension of integer numbers
+        :return:
+        """
+        plt.plot(epoches, costs, label="Cost")
+        plt.xlabel('Epoch')
+        plt.ylabel('Cost')
+        plt.title('Stacked RBM (data = digit-recognizer)')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
 
 def main():
     # build model

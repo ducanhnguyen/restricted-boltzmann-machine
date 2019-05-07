@@ -1,8 +1,9 @@
 """
-Implementation of RBM.
+Implementation of bernoulli RBM.
 
-Unlike autoencoder, which may have more than 1 hidden layer, RBM has only one hidden layer.
-I try to encode images, and then decode these images to get the original ones.
+RBM has only one hidden layer and one visible lay, no output layer. The value of both visible layer and hidden layer are boolean values.
+
+In this source code, I try to encode images, and then decode these images to get the original ones.
 """
 
 import matplotlib.pylab as plt
@@ -12,14 +13,14 @@ import tensorflow as tf
 import src.utils
 
 
-class RBM:
+class Bernoulli_RBM:
     def __init__(self, M):
         """
         :param M: Number of units in the hidden layer
         """
         self.M = M
 
-    def fit(self, X, learning_rate=0.001, epoch=50, batch_size=100):
+    def fit(self, X, learning_rate=0.001, epoch=100, batch_size=100):
         N, D = X.shape
         tf_V = tf.placeholder(dtype=tf.float32, shape=(None, D))
 
@@ -30,7 +31,7 @@ class RBM:
         self.tf_b = tf.Variable(dtype=tf.float32, initial_value=tf.random.normal(shape=(D, 1)))
 
         tf_Vhat = self.forward(tf_V)
-        tf_Vsample = self.Gibbs_sample(tf_V)
+        tf_Vsample = self.Gibbs_sampler(tf_V)
 
         tf_cost = tf.reduce_mean(self.F(tf_V) - self.F(tf_Vsample))
 
@@ -66,7 +67,7 @@ class RBM:
             self.plotComparison(X[2], Xhat[2])
             self.plotComparison(X[3], Xhat[3])
 
-    def Gibbs_sample(self, V):
+    def Gibbs_sampler(self, V):
         p_h_given_v = tf.nn.sigmoid(tf.math.add(tf.matmul(V, self.tf_W), tf.transpose(self.tf_c)))
         r = tf.random_uniform(shape=tf.shape(p_h_given_v))
         H = tf.to_float(r < p_h_given_v)
@@ -102,17 +103,17 @@ class RBM:
         plt.title('Reconstructed')
         plt.show()
 
-    def plotCost(self, iterations, costs):
+    def plotCost(self, epoches, costs):
         """
         Visualization
         :param scores: 1-D dimension of float numbers
-        :param iterations:  1-D dimension of integer numbers
+        :param epoches:  1-D dimension of integer numbers
         :return:
         """
-        plt.plot(iterations, costs, label="cost over iteration")
-        plt.xlabel('Iteration')
+        plt.plot(epoches, costs, label="Cost")
+        plt.xlabel('Epoch')
         plt.ylabel('Cost')
-        plt.title('Autoencoder (data = digit-recognizer)')
+        plt.title('Bernoulli RBM (data = digit-recognizer)')
         plt.grid(True)
         plt.legend()
         plt.show()
@@ -120,7 +121,7 @@ class RBM:
 
 def main():
     X, y = src.utils.readTrainingDigitRecognizer('../data/digit-recognizer/train.csv')
-    ae = RBM(M=300)
+    ae = Bernoulli_RBM(M=300)
     ae.fit(X)
 
 
